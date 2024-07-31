@@ -8,12 +8,14 @@
 // Max size for file name
 #define MAX 100
 
+// struct for linked list
 typedef struct fileline
 {
-    char *rivi; // TODO: use linked list
+    char *rivi;
     struct fileline *pNext;
 } fileLine;
 
+// This funktion is made to add a character at the end of a string
 char *append(const char *orig, char c)
 {
     size_t sz = strlen(orig);
@@ -24,127 +26,145 @@ char *append(const char *orig, char c)
     return str;
 }
 
-fileLine *lueTiedosto(fileLine *lista, char nimi[]) {
+// read a file and save it contents on the linked list
+// 
+// It doesen't assume the row's or file's length.
+fileLine *readFile(fileLine *list, char name[]) {
 
     FILE *tiedosto;
-    fileLine *pAlku = NULL, *pLoppu = NULL, *pUusi = NULL;
+    fileLine *pStart = NULL, *pEnd = NULL, *pUusi = NULL;
     char *line = NULL;
     size_t len = 0;
     ssize_t nread;
 
-    // Tiedoston avaus ja virheenkäsittely
-    if ((tiedosto = fopen(nimi, "r")) == NULL) {
-        fprintf(stderr, "Tiedoston avaaminen epäonnistui, lopetetaan\n");
+    // File opening and its error handling
+    if ((tiedosto = fopen(name, "r")) == NULL) {
+        fprintf(stderr, "Unable to open the file, exiting..\n");
         exit(1);
     }
     
-    // DEBUG
-    printf("Reading the file '%s'...\n", nimi); 
+    printf("Reading the file '%s'...\n", name); 
     
-    // Tiedoston luku
+    // reading the file
     while ((nread = getline(&line, &len, tiedosto)) != -1) {
         if ( (pUusi = (fileLine*)malloc(sizeof(fileLine))) == NULL) {
             fprintf(stderr, "malloc failed\n");
             exit(1);
         }
         printf("%s",line);
-        // strcpy(pUusi->rivi, line);
         pUusi->rivi = line;
-        pUusi->pNext = NULL;
 
-        if (pAlku == NULL) {
-            pAlku = pUusi;
-            pLoppu = pUusi;
-            // pAlku->rivi[strlen(pAlku->rivi)-1] = '\0'; 
+        pUusi->pNext = NULL;
+        if (pStart == NULL) {
+            pStart = pUusi;
+            pEnd = pUusi;
+            // the line below makes so that the output file doesen't have a extra line due to newline character
+            // pStart->rivi[strlen(pStart->rivi)-1] = '\0'; 
         } else {
-            pLoppu->pNext = pUusi;
-            pLoppu = pUusi;
+            pEnd->pNext = pUusi;
+            pEnd = pUusi;
         }
-        // printf("listassa: %s\n", pUusi->rivi);
         line = NULL;
     }
     // making the last line have a newline 
-    pLoppu->rivi = append(pLoppu->rivi, '\n');
-    // free(line);
+    pEnd->rivi = append(pEnd->rivi, '\n');
 
     fclose(tiedosto);
-    
-    return pAlku;
+    return pStart;
 }
 
-void kirjoitaTiedosto(fileLine *dLista, char nimi[]) {
+// Used to write file based on the data in linked list
+void writeFile(fileLine *dList, char name[]) {
     FILE *tiedosto;
 
-    // Tiedoston avaus ja virheenkäsittely
-    if ((tiedosto = fopen(nimi, "w")) == NULL) {
-        fprintf(stderr, "Tiedoston avaaminen epäonnistui, lopetetaan\n");
+    // File opening and its error handling
+    if ((tiedosto = fopen(name, "w")) == NULL) {
+        fprintf(stderr, "Unable to open the file, exiting..\n");
         exit(0);
     }
-    // DEBUG
-    printf("\nStaring to write on file '%s'...\n", nimi); 
     
-    fileLine *pNext = dLista;
+    printf("\nStaring to write on file '%s'...\n", name); 
+    
+    fileLine *pNext = dList;
+    // loop through the linked list and write file
     while (pNext != NULL) {
         fprintf(tiedosto, pNext->rivi);
         printf(pNext->rivi);
         pNext = pNext->pNext;
     }
     
-
     fclose(tiedosto);
     return;
 }
 
-void vapautaMuisti(fileLine *lista) {
+// Frees the memory of the linked list
+void freeMemory(fileLine *list) {
     
-    if (lista == NULL) {
+    // error handling
+    if (list == NULL) {
         return;
     }
 
-    fileLine *ptr = lista;
+    // loop through the linked list and free its memory
+    fileLine *ptr = list;
     while (ptr->pNext != NULL)
     {
-        lista = ptr->pNext;
+        list = ptr->pNext;
         // free(ptr->rivi);
         free(ptr);
-        ptr = lista;
+        ptr = list;
     }
 
     return;
 }
 
-void kaannaTiedosto(fileLine *pTiedosto) {
-    fileLine *pAlku = pTiedosto, *pLoppu = pTiedosto, *pNext = NULL;
+
+/* 
+this funktion is used to actually reverse the file.
+
+This is achieved by looping the file from top nad botton and switching their contents till they meet. 
+If the input file has odd amount of rows, then the loop doesen't touch the middle one and stops.
+*/
+void reverseFile(fileLine *pFile) {
+    fileLine *pStart = pFile, *pEnd = pFile, *pNext = NULL;
     char *string = NULL;
     size_t len = 0;
     ssize_t nread;
-    while (pLoppu->pNext != NULL)
+
+    // find the last item on list
+    while (pEnd->pNext != NULL)
     {
-        pLoppu = pLoppu->pNext;
+        pEnd = pEnd->pNext;
     }
     
-    while (pAlku != pLoppu) {
-        string = pAlku->rivi;
-        pAlku->rivi = pLoppu->rivi;
-        pLoppu->rivi = string;
+    // the loop
+    while (pStart != pEnd) { // this condition breaks odd files
+        // switch contents
+        string = pStart->rivi;
+        pStart->rivi = pEnd->rivi;
+        pEnd->rivi = string;
 
-        if(pAlku->pNext == pLoppu) {
+
+        // this breaks even files
+        if(pStart->pNext == pEnd) {
             break;
         }
-        pNext = pAlku;
-        while (pNext->pNext != pLoppu)
+
+        // loop pNext to find previous pointer for pLast
+        pNext = pStart;
+        while (pNext->pNext != pEnd)
         {
             pNext = pNext->pNext;
         }
-        pLoppu = pNext;
-        pAlku = pAlku->pNext;
+        pEnd = pNext;
+        pStart = pStart->pNext;
     }
     return;
 }
 
 int main(int argc, char *argv[])
 {
-    fileLine *pTiedosto;
+    fileLine *pFile;
     // Arg error handling 
     if (argc != 3) {
         fprintf(stderr, "usage: reverse <input> <output>\n");
@@ -157,10 +177,10 @@ int main(int argc, char *argv[])
         exit(1);
     }
     
-    pTiedosto = lueTiedosto(pTiedosto, argv[1]);
-    kaannaTiedosto(pTiedosto);
-    kirjoitaTiedosto(pTiedosto, argv[2]);
+    pFile = readFile(pFile, argv[1]);
+    reverseFile(pFile);
+    writeFile(pFile, argv[2]);
 
-    vapautaMuisti(pTiedosto);
+    freeMemory(pFile);
     exit(0);
 }
