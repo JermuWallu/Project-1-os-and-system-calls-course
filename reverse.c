@@ -31,14 +31,14 @@ char *append(const char *orig, char c)
 // It doesen't assume the row's or file's length.
 fileLine *readFile(fileLine *list, char name[]) {
 
-    FILE *tiedosto;
-    fileLine *pStart = NULL, *pEnd = NULL, *pUusi = NULL;
+    FILE *file;
+    fileLine *pStart = NULL, *pEnd = NULL, *pNew = NULL;
     char *line = NULL;
     size_t len = 0;
     ssize_t nread;
 
     // File opening and its error handling
-    if ((tiedosto = fopen(name, "r")) == NULL) {
+    if ((file = fopen(name, "r")) == NULL) {
         fprintf(stderr, "Unable to open the file, exiting..\n");
         exit(1);
     }
@@ -46,39 +46,39 @@ fileLine *readFile(fileLine *list, char name[]) {
     printf("Reading the file '%s'...\n", name); 
     
     // reading the file
-    while ((nread = getline(&line, &len, tiedosto)) != -1) {
-        if ( (pUusi = (fileLine*)malloc(sizeof(fileLine))) == NULL) {
+    while ((nread = getline(&line, &len, file)) != -1) {
+        if ( (pNew = (fileLine*)malloc(sizeof(fileLine))) == NULL) {
             fprintf(stderr, "malloc failed\n");
             exit(1);
         }
         printf("%s",line);
-        pUusi->rivi = line;
+        pNew->rivi = line;
 
-        pUusi->pNext = NULL;
+        pNew->pNext = NULL;
         if (pStart == NULL) {
-            pStart = pUusi;
-            pEnd = pUusi;
+            pStart = pNew;
+            pEnd = pNew;
             // the line below makes so that the output file doesen't have a extra line due to newline character
             // pStart->rivi[strlen(pStart->rivi)-1] = '\0'; 
         } else {
-            pEnd->pNext = pUusi;
-            pEnd = pUusi;
+            pEnd->pNext = pNew;
+            pEnd = pNew;
         }
         line = NULL;
     }
     // making the last line have a newline 
     pEnd->rivi = append(pEnd->rivi, '\n');
 
-    fclose(tiedosto);
+    fclose(file);
     return pStart;
 }
 
 // Used to write file based on the data in linked list
 void writeFile(fileLine *dList, char name[]) {
-    FILE *tiedosto;
+    FILE *file;
 
     // File opening and its error handling
-    if ((tiedosto = fopen(name, "w")) == NULL) {
+    if ((file = fopen(name, "w")) == NULL) {
         fprintf(stderr, "Unable to open the file, exiting..\n");
         exit(0);
     }
@@ -88,12 +88,12 @@ void writeFile(fileLine *dList, char name[]) {
     fileLine *pNext = dList;
     // loop through the linked list and write file
     while (pNext != NULL) {
-        fprintf(tiedosto, "%s",pNext->rivi);
+        fprintf(file, "%s",pNext->rivi);
         printf("%s", pNext->rivi);
         pNext = pNext->pNext;
     }
     
-    fclose(tiedosto);
+    fclose(file);
     return;
 }
 
