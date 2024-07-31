@@ -88,8 +88,8 @@ void writeFile(fileLine *dList, char name[]) {
     fileLine *pNext = dList;
     // loop through the linked list and write file
     while (pNext != NULL) {
-        fprintf(tiedosto, pNext->rivi);
-        printf(pNext->rivi);
+        fprintf(tiedosto, "%s",pNext->rivi);
+        printf("%s", pNext->rivi);
         pNext = pNext->pNext;
     }
     
@@ -128,8 +128,6 @@ If the input file has odd amount of rows, then the loop doesen't touch the middl
 void reverseFile(fileLine *pFile) {
     fileLine *pStart = pFile, *pEnd = pFile, *pNext = NULL;
     char *string = NULL;
-    size_t len = 0;
-    ssize_t nread;
 
     // find the last item on list
     while (pEnd->pNext != NULL)
@@ -164,7 +162,7 @@ void reverseFile(fileLine *pFile) {
 
 int main(int argc, char *argv[])
 {
-    fileLine *pFile;
+    fileLine *pFile = NULL;
     // Arg error handling 
     if (argc != 3) {
         fprintf(stderr, "usage: reverse <input> <output>\n");
